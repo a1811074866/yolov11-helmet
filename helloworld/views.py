@@ -274,3 +274,137 @@ def detect2(request):
         video_url2 = "media\\video\\" + name
         del request.session['filename']
         return render(request,'index2.html',{'video_url2':video_url2,'video_url1':video_url1,'video_url4':video_url4})
+
+
+
+import os
+import cv2
+import time
+import threading
+from django.conf import settings
+from django.http import JsonResponse, StreamingHttpResponse
+from django.views.decorators import gzip
+from django.views.decorators.csrf import csrf_exempt
+from ultralytics import YOLO
+
+# 全局变量管理
+current_frame = None
+processing_lock = threading.Lock()
+
+def videodetetct(request):
+    return render(request,"video.html")
+
+@csrf_exempt
+def upload_video(request):
+    """处理视频上传"""
+    if request.method == 'POST' and request.FILES.get('video'):
+        video_file = request.FILES['video']
+        # 生成唯一文件名
+        filename = f"upload_{int(time.time())}{os.path.splitext(video_file.name)[1]}"
+        save_path = os.path.join(settings.MEDIA_ROOT, filename)
+
+        # 保存文件
+        with open(save_path, 'wb+') as f:
+            for chunk in video_file.chunks():
+                f.write(chunk)
+
+        # 启动处理线程
+        threading.Thread(target=process_video, args=(save_path,)).start()
+
+        return JsonResponse({'status': 'success', 'filename': filename})
+    return JsonResponse({'status': 'error', 'message': '无效请求'})
+
+
+def process_video(video_path):
+    global current_frame, processing_paused, output_video_path
+
+    # 生成唯一输出文件名
+    output_video_path = os.path.join(settings.MEDIA_ROOT, f"result_{int(time.time())}.mp4")
+
+    cap = cv2.VideoCapture(video_path)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+
+    # 初始化视频写入器
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
+
+    try:
+        while cap.isOpened():
+            # 检查暂停状态
+            with control_lock:
+                if processing_paused:
+                    time.sleep(0.1)
+                    continue
+
+            ret, frame = cap.read()
+            if not ret: break
+
+            # YOLO推理
+            results = model.predict(source=frame, stream=True)
+            for result in results:
+                annotated_frame = result.plot()
+
+                # 更新全局帧并写入输出文件
+                with processing_lock:
+                    current_frame = annotated_frame
+                    out.write(annotated_frame)
+
+            time.sleep(1 / fps)  # 按原视频速率处理
+    finally:
+        cap.release()
+        out.release()
+        os.remove(video_path)  # 清理上传文件
+
+
+@gzip.gzip_page
+def video_stream(request):
+    """生成MJPEG视频流"""
+
+    def generate():
+        while True:
+            with processing_lock:
+                if current_frame is not None:
+                    ret, jpeg = cv2.imencode('.jpg', current_frame)
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
+            time.sleep(0.01)
+
+    return StreamingHttpResponse(
+        generate(),
+        content_type='multipart/x-mixed-replace; boundary=frame'
+    )
+
+# views.py
+processing_paused = False  # 全局暂停状态
+control_lock = threading.Lock()  # 控制状态锁
+output_video_path = None  # 输出文件路径
+
+
+@csrf_exempt
+def control_view(request):
+    """处理暂停/继续请求"""
+    global processing_paused
+    action = request.GET.get('action', '')
+
+    if action not in ['pause', 'resume']:
+        return JsonResponse({'status': 'error', 'message': '无效操作'})
+
+    with control_lock:
+        processing_paused = (action == 'pause')
+
+    return JsonResponse({'status': 'success'})
+
+
+def download_view(request):
+    """提供结果视频下载"""
+    global output_video_path
+    if not output_video_path or not os.path.exists(output_video_path):
+        return HttpResponseNotFound("结果文件未生成")
+
+    with open(output_video_path, 'rb') as f:
+        response = HttpResponse(f.read(), content_type='video/mp4')
+        response['Content-Disposition'] = f'attachment; filename="{os.path.basename(output_video_path)}"'
+        return response
+

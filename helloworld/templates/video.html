@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>实时视频检测</title>
+    <style>
+        #container { max-width: 1280px; margin: 20px auto; }
+        #videoFeed { border: 2px solid #4CAF50; border-radius: 5px; }
+        .upload-btn {
+            padding: 12px 24px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        #status { color: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>实时视频目标检测</h1>
+
+        <!-- 上传控件 -->
+        <input type="file" id="videoInput" accept="video/*" hidden>
+        <button class="upload-btn" onclick="document.getElementById('videoInput').click()">
+            上传视频
+        </button>
+        <div id="status">等待上传视频...</div>
+
+        <!-- 视频显示区域 -->
+        <img id="videoFeed" src="{% url 'video_stream' %}" width="1280" height="720">
+        <!-- 在视频下方添加控制栏 -->
+<div class="control-bar">
+    <button onclick="pauseDetection()">暂停</button>
+    <button onclick="resumeDetection()">继续</button>
+    <button onclick="downloadResult()">下载结果</button>
+</div>
+
+<script>
+    // 控制API示例
+    function pauseDetection() {
+        fetch('/control/?action=pause')
+    }
+    function resumeDetection() {
+        fetch('/control/?action=resume')
+    }
+    function downloadResult() {
+        window.open('/download/')
+    }
+</script>
+    </div>
+
+    <script>
+        const videoInput = document.getElementById('videoInput');
+        const statusDiv = document.getElementById('status');
+
+        videoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            statusDiv.textContent = '上传中...';
+            const formData = new FormData();
+            formData.append('video', file);
+
+            fetch('/upload_video/', {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    statusDiv.textContent = '实时检测中...';
+                } else {
+                    statusDiv.textContent = '上传失败: ' + data.message;
+                }
+            }).catch(err => {
+                statusDiv.textContent = '网络错误: ' + err.message;
+            });
+        });
+
+        // 自动重连机制
+        setInterval(() => {
+            const img = document.getElementById('videoFeed');
+            img.src = img.src.split('?')[0] + '?t=' + Date.now();
+        }, 3000);
+    </script>
+</body>
+</html>

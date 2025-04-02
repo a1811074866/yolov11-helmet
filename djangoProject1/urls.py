@@ -25,4 +25,9 @@ urlpatterns = [
     path('register/', helloworld.views.register),
     path('register_user', helloworld.views.register_user),
     path('exit/', helloworld.views.exit),
+    path('videodetect/', helloworld.views.videodetetct),
+    path('upload_video/', helloworld.views.upload_video,name='upload_video'),
+    path('stream/', helloworld.views.video_stream,name='video_stream'),
+    path('control/', helloworld.views.control_view, name='control'),
+    path('download/', helloworld.views.download_view, name='download'),
 ]
