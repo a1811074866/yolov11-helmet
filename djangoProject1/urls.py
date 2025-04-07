@@ -30,4 +30,6 @@ urlpatterns = [
     path('stream/', helloworld.views.video_stream,name='video_stream'),
     path('control/', helloworld.views.control_view, name='control'),
     path('download/', helloworld.views.download_view, name='download'),
+    path('terminate/', helloworld.views.terminate_view, name='terminate'),
+
 ]

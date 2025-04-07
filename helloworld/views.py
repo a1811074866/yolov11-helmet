@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
 from ultralytics import YOLO
 from django.http import JsonResponse
@@ -11,6 +11,8 @@ from django.shortcuts import render
 from django.http import JsonResponse
 
 import torch
+import os
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'  # 添加到程序最开头
 model = YOLO(model=r'C:\Users\hhhh\PycharmProjects\djangoProject1\media\best.pt')  # 全局加载模型一次即可
 import cv2
 import os
@@ -293,10 +295,12 @@ processing_lock = threading.Lock()
 
 def videodetetct(request):
     return render(request,"video.html")
-
+without_helmet_count = 0
+with_helmet_count = 0
 @csrf_exempt
 def upload_video(request):
     """处理视频上传"""
+    global without_helmet_count,with_helmet_count
     if request.method == 'POST' and request.FILES.get('video'):
         video_file = request.FILES['video']
         # 生成唯一文件名
@@ -310,29 +314,50 @@ def upload_video(request):
 
         # 启动处理线程
         threading.Thread(target=process_video, args=(save_path,)).start()
+        return JsonResponse({'status': 'success', 'filename': filename,'with_helmet':with_helmet_count,'without_helmet':without_helmet_count})
+    return JsonResponse({'status': 'error', 'message': '无效请求','with_helmet':with_helmet_count,'without_helmet':without_helmet_count})
 
-        return JsonResponse({'status': 'success', 'filename': filename})
-    return JsonResponse({'status': 'error', 'message': '无效请求'})
+import threading
 
 
+
+#
 def process_video(video_path):
-    global current_frame, processing_paused, output_video_path
+    global current_frame, processing_paused, output_video_path, processing_termin, should_terminate
+    global without_helmet_count,with_helmet_count
+    # 初始化统计器
+    without_helmet_count = 0
+    with_helmet_count = 0
+    seen_ids = set()
+    count_lock = threading.Lock()
+    id_tracker = {}  # {track_id: last_seen_frame}
 
-    # 生成唯一输出文件名
-    output_video_path = os.path.join(settings.MEDIA_ROOT, f"result_{int(time.time())}.mp4")
+    # 生成浏览器可访问的文件名
+    timestamp = int(time.time())
+    output_filename = f"result_{timestamp}.mp4"
+    output_video_path = os.path.join(settings.MEDIA_ROOT, output_filename)
+    output_video_url = os.path.join(settings.MEDIA_URL, output_filename)
 
     cap = cv2.VideoCapture(video_path)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
 
-    # 初始化视频写入器
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    # 使用浏览器兼容编码
+    fourcc = cv2.VideoWriter_fourcc(*'avc1')  # 关键修改点
     out = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
 
+    if not out.isOpened():
+        raise RuntimeError(f"视频编码失败，请安装OpenH264编码器。当前fourcc: {fourcc}")
+
     try:
+        frame_count = 0
         while cap.isOpened():
-            # 检查暂停状态
+            with terminate_lock:
+                if should_terminate:
+                    print("收到终止指令，退出处理")
+                    break
+
             with control_lock:
                 if processing_paused:
                     time.sleep(0.1)
@@ -341,21 +366,170 @@ def process_video(video_path):
             ret, frame = cap.read()
             if not ret: break
 
-            # YOLO推理
-            results = model.predict(source=frame, stream=True)
+            # 启用跟踪的预测
+            results = model.track(
+                source=frame,
+                persist=True,
+                tracker="bytetrack.yaml",
+                stream=True
+            )
+
             for result in results:
+                current_frame_ids = set()
+                for box in result.boxes:
+                    track_id = int(box.id.item()) if box.id is not None else None
+                    cls_id = int(box.cls)
+
+                    if track_id is not None:
+                        current_frame_ids.add(track_id)
+                        id_tracker[track_id] = frame_count
+
+                        # 新ID计数
+                        if track_id not in seen_ids:
+                            seen_ids.add(track_id)
+                            with count_lock:
+                                if cls_id == 0:
+                                    without_helmet_count += 1
+                                elif cls_id == 1:
+                                    with_helmet_count += 1
+
+                    # 清理过期ID
+                expired_ids = [id for id, last in id_tracker.items()
+                               if frame_count - last > 30]
+                for id in expired_ids:
+                    id_tracker.pop(id, None)
+                    seen_ids.discard(id)
+
+                frame_count += 1
+
+                # 生成标注帧并添加统计信息
                 annotated_frame = result.plot()
 
-                # 更新全局帧并写入输出文件
+                # 添加统计文字
+                with count_lock:
+                    display_safe = with_helmet_count
+                    display_danger = without_helmet_count
+
+                text = f"Safe: {display_safe}  Danger: {display_danger}"
+                cv2.putText(
+                    annotated_frame,
+                    text,
+                    (20, 70),  # 调整位置
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1.2,  # 字体大小
+                    (0, 255, 0) if display_safe > display_danger else (0, 0, 255),
+                    3,
+                    cv2.LINE_AA
+                )
+
+                # 写入视频
                 with processing_lock:
                     current_frame = annotated_frame
                     out.write(annotated_frame)
 
-            time.sleep(1 / fps)  # 按原视频速率处理
+            time.sleep(1 / fps)
+                # 处理每个检测框
+            #     for box in result.boxes:
+            #         track_id = int(box.id.item()) if box.id is not None else None
+            #         cls_id = int(box.cls)
+            #
+            #         if track_id is not None:
+            #             current_frame_ids.add(track_id)
+            #             id_tracker[track_id] = frame_count
+            #
+            #             # 新ID计数
+            #             if track_id not in seen_ids:
+            #                 seen_ids.add(track_id)
+            #                 with count_lock:
+            #                     if cls_id == 0:
+            #                         without_helmet_count += 1
+            #                     elif cls_id == 1:
+            #                         with_helmet_count += 1
+            #
+            #     # 清理过期ID
+            #     expired_ids = [id for id, last in id_tracker.items()
+            #                    if frame_count - last > 30]
+            #     for id in expired_ids:
+            #         id_tracker.pop(id, None)
+            #         seen_ids.discard(id)
+            #
+            #     frame_count += 1
+            #
+            #     # 生成标注帧并写入视频
+            #     annotated_frame = result.plot()
+            #     with processing_lock:
+            #         current_frame = annotated_frame
+            #         out.write(annotated_frame)
+            #
+            # time.sleep(1 / fps)
+
     finally:
+        # 资源释放
         cap.release()
         out.release()
-        os.remove(video_path)  # 清理上传文件
+        if os.path.exists(video_path):
+            os.remove(video_path)
+        processing_termin = False
+        should_terminate = False
+
+        print(f"[最终统计] 安全佩戴: {with_helmet_count} | 未佩戴: {without_helmet_count}")
+        print("视频处理资源已释放")
+
+
+#
+# def process_video(video_path):
+#     global current_frame, processing_paused, output_video_path,processing_termin,should_terminate
+#
+#     # 生成唯一输出文件名
+#     output_video_path = os.path.join(settings.MEDIA_ROOT, f"result_{int(time.time())}.mp4")
+#
+#     cap = cv2.VideoCapture(video_path)
+#     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+#     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+#     fps = cap.get(cv2.CAP_PROP_FPS)
+#
+#     # 初始化视频写入器
+#     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+#     out = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
+#
+#     try:
+#         while cap.isOpened():
+#
+#             with terminate_lock:
+#
+#
+#                 if should_terminate:
+#                     print("收到终止指令，退出处理")
+#                     break
+#
+#             with control_lock:
+#                 if processing_paused:
+#                     time.sleep(0.1)
+#                     continue
+#
+#
+#             ret, frame = cap.read()
+#             if not ret: break
+#
+#             # YOLO推理
+#             results = model.predict(source=frame, stream=True)
+#             for result in results:
+#                 annotated_frame = result.plot()
+#
+#                 # 更新全局帧并写入输出文件
+#                 with processing_lock:
+#                     current_frame = annotated_frame
+#                     out.write(annotated_frame)
+#
+#             time.sleep(1 / fps)  # 按原视频速率处理
+#     finally:
+#         cap.release()
+#         out.release()
+#         if os.path.exists(video_path):
+#             os.remove(video_path)
+#         processing_termin=False
+#         should_terminate=False
+#         print("视频处理资源已释放")
 
 
 @gzip.gzip_page
@@ -381,10 +555,12 @@ processing_paused = False  # 全局暂停状态
 control_lock = threading.Lock()  # 控制状态锁
 output_video_path = None  # 输出文件路径
 
+# views.py
 
 @csrf_exempt
 def control_view(request):
     """处理暂停/继续请求"""
+    print("pause@")
     global processing_paused
     action = request.GET.get('action', '')
 
@@ -393,9 +569,11 @@ def control_view(request):
 
     with control_lock:
         processing_paused = (action == 'pause')
-
-    return JsonResponse({'status': 'success'})
-
+    print("pause%%%")
+    if processing_paused:
+        return JsonResponse({'status': 'paused'})
+    else:
+        return JsonResponse({'status': 'resume'})
 
 def download_view(request):
     """提供结果视频下载"""
@@ -407,4 +585,39 @@ def download_view(request):
         response = HttpResponse(f.read(), content_type='video/mp4')
         response['Content-Disposition'] = f'attachment; filename="{os.path.basename(output_video_path)}"'
         return response
+
+
+# views.py
+import threading
+
+# views.py 全局变量
+should_terminate=False
+terminate_lock = threading.Lock()  # 独立于暂停控制的锁
+@csrf_exempt
+def terminate_view(request):
+    """安全终止视频处理"""
+
+
+    global should_terminate
+    should_terminate = True
+    if request.method != 'POST':
+        should_terminate = True
+        return JsonResponse({'status': 'error', 'message': '仅支持POST方法'}, status=405)
+
+    with terminate_lock:
+
+        should_terminate = True
+
+    return JsonResponse({'status': 'terminate', 'message': '终止指令已发送'})
+
+
+from django.shortcuts import render
+# 引入响应类
+from django.http import HttpResponse
+
+
+
+
+
+
 

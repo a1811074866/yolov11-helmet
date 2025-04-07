@@ -2,8 +2,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-
     <meta charset="UTF-8">
     <title>Title</title>
     <link rel="stylesheet" href="{% static 'bootstrap-5.0.0-beta3-dist/css/bootstrap.min.css' %}">
@@ -51,6 +49,18 @@
             background-color: #008CBA;
             color: white;
         }
+        .button3 {
+            background-color: white;
+            color: black;
+            border: 2px solid #008CBA;
+        }
+
+        .button3:hover {
+            background-color: #d63384;
+            color: white;
+        }
+
+
 
     </style>
 </head>
@@ -95,8 +105,10 @@
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
     <!-- 视频 -->
 
-    <a class="button button1" href="/video/">视频检测</a>
-    <a class="button button2" href="/photo/">图片检测</a>
+    <a class="button button1" href="/video/">视频后台检测中心</a>
+    <a class="button button2" href="/photo/">图片检测中心</a>
+    <a class="button button3" href="/videodetect/">实时视频检测中心</a>
 </div>
+      <iframe width="680" height="260" src="https://i.tianqi.com/?c=code&a=getcode&id=13&py=nanning&icon=2" frameborder="0"></iframe>
 </body>
 </html>
