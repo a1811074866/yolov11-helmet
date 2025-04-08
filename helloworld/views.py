@@ -24,7 +24,7 @@ db = mysql.connector.connect(
     password="123456",  # 密码
     database="helmet"  # 数据库名称
 )
-
+username_upload=None
 def video(request):
     return render(request,'index2.html')
 
@@ -56,17 +56,25 @@ def register_user(request):
    User.objects.create(name=username, password=password,type=type)
    return render(request, "login.html")
 
+from .models import Record
+def add_record(name,user_upload,create_at,with_helmet,without_helmet):
+   Record.objects.create(name=name,user_upload=user_upload,created_at=create_at,with_helmet=with_helmet,without_helmet=without_helmet)
+
 
 def to_login(request):
     return render(request,'login.html')
 
+
 def exit(request):
+    global username_upload
     request.session["user"]=None
+    username_upload=None
     print(request.session["user"])
     return render(request,'login.html')
 
 from django.db import connection
 def login(request):
+    global username_upload
     if request.method=="GET":
         return render(request,'login.html')
     else:
@@ -88,6 +96,7 @@ def login(request):
                 if row[1] == username and row[2] == password:
 
                     request.session["user"]=username
+                    username_upload=username
                     print(request.session["user"])
                     # return render(request,"main.html")
                     return render(request, 'upload.html')
@@ -314,13 +323,14 @@ def upload_video(request):
 
         # 启动处理线程
         threading.Thread(target=process_video, args=(save_path,)).start()
-        return JsonResponse({'status': 'success', 'filename': filename,'with_helmet':with_helmet_count,'without_helmet':without_helmet_count})
-    return JsonResponse({'status': 'error', 'message': '无效请求','with_helmet':with_helmet_count,'without_helmet':without_helmet_count})
+        return JsonResponse({'status': 'success', 'filename': filename})
+    return JsonResponse({'status': 'error', 'message': '无效请求'})
 
 import threading
 
-
-
+from PIL import Image, ImageDraw, ImageFont
+import numpy as np
+from datetime import datetime
 #
 def process_video(video_path):
     global current_frame, processing_paused, output_video_path, processing_termin, should_terminate
@@ -410,17 +420,29 @@ def process_video(video_path):
                     display_safe = with_helmet_count
                     display_danger = without_helmet_count
 
-                text = f"Safe: {display_safe}  Danger: {display_danger}"
-                cv2.putText(
-                    annotated_frame,
-                    text,
-                    (20, 70),  # 调整位置
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    1.2,  # 字体大小
-                    (0, 255, 0) if display_safe > display_danger else (0, 0, 255),
-                    3,
-                    cv2.LINE_AA
-                )
+                text = f"佩戴头盔人数: {display_safe}  未佩戴头盔人数: {display_danger}"
+                annotated_frame_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
+                pil_img = Image.fromarray(annotated_frame_rgb)
+                draw = ImageDraw.Draw(pil_img)
+                font = ImageFont.truetype("simhei.ttf", 40)
+
+                draw.text((20, 70),  # 位置
+                          text,
+                          font=font,
+                          fill=(0, 255, 0) if display_safe > display_danger else (255, 0, 0))
+
+                # 转换回OpenCV格式
+                annotated_frame = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+                # cv2.putText(
+                #     annotated_frame,
+                #     text,
+                #     (20, 70),  # 调整位置
+                #     cv2.FONT_HERSHEY_SIMPLEX,
+                #     1.2,  # 字体大小
+                #     (0, 255, 0) if display_safe > display_danger else (0, 0, 255),
+                #     3,
+                #     cv2.LINE_AA
+                # )
 
                 # 写入视频
                 with processing_lock:
@@ -428,40 +450,7 @@ def process_video(video_path):
                     out.write(annotated_frame)
 
             time.sleep(1 / fps)
-                # 处理每个检测框
-            #     for box in result.boxes:
-            #         track_id = int(box.id.item()) if box.id is not None else None
-            #         cls_id = int(box.cls)
-            #
-            #         if track_id is not None:
-            #             current_frame_ids.add(track_id)
-            #             id_tracker[track_id] = frame_count
-            #
-            #             # 新ID计数
-            #             if track_id not in seen_ids:
-            #                 seen_ids.add(track_id)
-            #                 with count_lock:
-            #                     if cls_id == 0:
-            #                         without_helmet_count += 1
-            #                     elif cls_id == 1:
-            #                         with_helmet_count += 1
-            #
-            #     # 清理过期ID
-            #     expired_ids = [id for id, last in id_tracker.items()
-            #                    if frame_count - last > 30]
-            #     for id in expired_ids:
-            #         id_tracker.pop(id, None)
-            #         seen_ids.discard(id)
-            #
-            #     frame_count += 1
-            #
-            #     # 生成标注帧并写入视频
-            #     annotated_frame = result.plot()
-            #     with processing_lock:
-            #         current_frame = annotated_frame
-            #         out.write(annotated_frame)
-            #
-            # time.sleep(1 / fps)
+
 
     finally:
         # 资源释放
@@ -471,7 +460,11 @@ def process_video(video_path):
             os.remove(video_path)
         processing_termin = False
         should_terminate = False
-
+        create_at=datetime.now()
+        print("video_path "+video_path)
+        Str=video_path[51:]
+        print(Str)
+        add_record(Str,username_upload,create_at,with_helmet_count,without_helmet_count)
         print(f"[最终统计] 安全佩戴: {with_helmet_count} | 未佩戴: {without_helmet_count}")
         print("视频处理资源已释放")
 

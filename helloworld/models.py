@@ -8,6 +8,14 @@ class User(models.Model):
     class Meta:
         db_table="user"
 
+class Record(models.Model):
+    name=models.CharField(max_length=1000)
+    user_upload = models.CharField(max_length=100)
+    created_at = models.CharField(max_length=100)
+    with_helmet = models.CharField(max_length=100)
+    without_helmet=models.CharField(max_length=100)
 
+    class Meta:
+        db_table="Record"
 
 

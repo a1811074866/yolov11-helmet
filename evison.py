@@ -1,4 +1,2 @@
-import torch
-import sys
-print("python:"+sys.version)
-print("torch:"+torch.__version__)
+Str="C:UsershhhhPycharmProjectsdjangoProject1media"
+print(Str[44])
