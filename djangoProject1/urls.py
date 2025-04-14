@@ -22,6 +22,7 @@ urlpatterns = [
     path('video/', helloworld.views.video),
     path('photo/', helloworld.views.photo),
     path('index/', helloworld.views.index),
+    path('record_list/', helloworld.views.recordlist),
     path('register/', helloworld.views.register),
     path('register_user', helloworld.views.register_user),
     path('exit/', helloworld.views.exit),

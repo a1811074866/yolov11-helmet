@@ -13,7 +13,8 @@ from django.http import JsonResponse
 import torch
 import os
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'  # 添加到程序最开头
-model = YOLO(model=r'C:\Users\hhhh\PycharmProjects\djangoProject1\media\best.pt')  # 全局加载模型一次即可
+# model = YOLO(model=r'C:\Users\hhhh\PycharmProjects\djangoProject1\media\best.pt')  # 全局加载模型一次即可
+model = YOLO(model=r'C:\Users\hhhh\PycharmProjects\djangoProject1\media\best22.pt')  # 全局加载模型一次即可
 import cv2
 import os
 # Create your views here.
@@ -34,6 +35,11 @@ def photo(request):
 def index(request):
     return render(request,'upload.html')
 
+def recordlist(request):
+    recordlist = Record.objects.all()
+    print(recordlist)
+    content_value={"title":"记录列表","recordList":recordlist}
+    return render(request,'recordlist.html',context=content_value)
 
 def index(request):
     return render(request,'upload.html')
@@ -381,7 +387,7 @@ def process_video(video_path):
                 source=frame,
                 persist=True,
                 tracker="bytetrack.yaml",
-                stream=True
+                stream=True,
             )
 
             for result in results:
@@ -420,7 +426,8 @@ def process_video(video_path):
                     display_safe = with_helmet_count
                     display_danger = without_helmet_count
 
-                text = f"佩戴头盔人数: {display_safe}  未佩戴头盔人数: {display_danger}"
+                text = f"佩戴头盔人数: {display_safe}"
+                text2 = f"未佩戴头盔人数: {display_danger}"
                 annotated_frame_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
                 pil_img = Image.fromarray(annotated_frame_rgb)
                 draw = ImageDraw.Draw(pil_img)
@@ -430,7 +437,10 @@ def process_video(video_path):
                           text,
                           font=font,
                           fill=(0, 255, 0) if display_safe > display_danger else (255, 0, 0))
-
+                draw.text((20, 120),  # 位置
+                          text2,
+                          font=font,
+                          fill=(0, 255, 0) if display_safe > display_danger else (255, 0, 0))
                 # 转换回OpenCV格式
                 annotated_frame = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
                 # cv2.putText(

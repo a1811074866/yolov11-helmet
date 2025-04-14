@@ -74,7 +74,7 @@
 <div class="collapse navbar-collapse" id="navbarSupportedContent">
 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
   <li class="nav-item">
-    <a class="nav-link active" aria-current="page" href="/index/">个人中心</a>
+    <a class="nav-link active" aria-current="page" href="/record_list/">记录中心</a>
   </li>
   <li class="nav-item">
     <a class="nav-link" href="#"></a>
@@ -101,14 +101,23 @@
     <script src="{% static 'bootstrap-5.0.0-beta3-dist/js/bootstrap.min.js' %}"></script>
 <div class="container" >
 </div>
-
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
-    <!-- 视频 -->
-
-    <a class="button button1" href="/video/">视频后台检测中心</a>
-    <a class="button button2" href="/photo/">图片检测中心</a>
-    <a class="button button3" href="/videodetect/">实时视频检测中心</a>
+<div class="list-group" style="width: 240px">
+  <a href="#" class="list-group-item list-group-item-action active" aria-current="true">
+    Cras justo odio
+  </a>
+  <a href="/video/" class="list-group-item list-group-item-action">视频后台检测中心</a>
+  <a href="/photo/" class="list-group-item list-group-item-action">图片检测中心</a>
+  <a href="/videodetect/" class="list-group-item list-group-item-action">实时视频检测中心</a>
+  <a href="#" class="list-group-item list-group-item-action disabled" tabindex="-1" aria-disabled="true">Vestibulum at eros</a>
 </div>
+
+{#<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">#}
+{#    <!-- 视频 -->#}
+{##}
+{#    <a class="button button1" href="/video/">视频后台检测中心</a>#}
+{#    <a class="button button2" href="/photo/">图片检测中心</a>#}
+{#    <a class="button button3" href="/videodetect/">实时视频检测中心</a>#}
+{#</div>#}
       <iframe width="680" height="260" src="https://i.tianqi.com/?c=code&a=getcode&id=13&py=nanning&icon=2" frameborder="0"></iframe>
 </body>
 </html>
