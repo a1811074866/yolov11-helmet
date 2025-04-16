@@ -30,10 +30,10 @@ def video(request):
     return render(request,'index2.html')
 
 def photo(request):
-    return render(request,'index3.html')
+    return render(request,'indexdetect1.html')
 
 def index(request):
-    return render(request,'upload.html')
+    return render(request,'indexmain.html')
 
 def recordlist(request):
     recordlist = Record.objects.all()
@@ -42,12 +42,12 @@ def recordlist(request):
     return render(request,'recordlist.html',context=content_value)
 
 def index(request):
-    return render(request,'upload.html')
+    return render(request,'indexmain.html')
 def index2(request):
     return render(request,'index2.html')
 
 def register(request):
-    return render(request,'register.html')
+    return render(request,'register2.html')
 from .models import User
 
 def register_user(request):
@@ -56,11 +56,11 @@ def register_user(request):
    type=request.POST.get('type')
    result=User.objects.filter(name=username)
    if result:
-       return render(request, 'register.html',
+       return render(request, 'register2.html',
                      context={"errorInfo": "该用户名已存在", "username":
                          username, "password": password})
    User.objects.create(name=username, password=password,type=type)
-   return render(request, "login.html")
+   return render(request, "login2.html")
 
 from .models import Record
 def add_record(name,user_upload,create_at,with_helmet,without_helmet):
@@ -68,7 +68,7 @@ def add_record(name,user_upload,create_at,with_helmet,without_helmet):
 
 
 def to_login(request):
-    return render(request,'login.html')
+    return render(request,'login2.html')
 
 
 def exit(request):
@@ -76,13 +76,13 @@ def exit(request):
     request.session["user"]=None
     username_upload=None
     print(request.session["user"])
-    return render(request,'login.html')
+    return render(request,'login2.html')
 
 from django.db import connection
 def login(request):
     global username_upload
     if request.method=="GET":
-        return render(request,'login.html')
+        return render(request,'login2.html')
     else:
         connection.close()
         with connection.cursor() as cursor:
@@ -105,14 +105,14 @@ def login(request):
                     username_upload=username
                     print(request.session["user"])
                     # return render(request,"main.html")
-                    return render(request, 'upload.html')
-    return render(request, 'login.html', {"error": "登录错误"})
+                    return render(request, 'indexmain.html')
+    return render(request, 'login2.html', {"error": "登录错误"})
 
 
 
 
 def to_upload(request):
-    return render(request,'upload.html')
+    return render(request,'indexmain.html')
 
 import os
 from django.conf import settings
@@ -146,7 +146,7 @@ def upload(request):
             f.write(chunk)
         f.close()
         # print("))"+video_url1)
-        return render(request, 'index3.html', {'video_url1': video_url1,'video_url2':video_url2,'video_url4':video_url4},)
+        return render(request, 'indexdetect1.html', {'video_url1': video_url1,'video_url2':video_url2,'video_url4':video_url4},)
         #return HttpResponse("文件上传成功！")
     else:
         return HttpResponse("没发现文件！")
@@ -209,7 +209,7 @@ def detect(request):
         out.release()
         video_url2 = "media\\video\\" + name
         del request.session['filename']
-        return render(request,'index3.html',{'video_url2':video_url2,'video_url1':video_url1,'video_url4':video_url4})
+        return render(request,'indexdetect1.html',{'video_url2':video_url2,'video_url1':video_url1,'video_url4':video_url4})
 
 def upload2(request):
     myFile = request.FILES.get("myfile", None)
@@ -388,6 +388,7 @@ def process_video(video_path):
                 persist=True,
                 tracker="bytetrack.yaml",
                 stream=True,
+                conf=0.7
             )
 
             for result in results:
@@ -617,7 +618,6 @@ def terminate_view(request):
 from django.shortcuts import render
 # 引入响应类
 from django.http import HttpResponse
-
 
 
 

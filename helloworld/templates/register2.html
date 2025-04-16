@@ -1,0 +1,125 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zxx">
+
+<head>
+	<title>Effect Login Form Responsive Widget Template</title>
+	<!-- Meta tag Keywords -->
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+     <link rel="stylesheet" href="{% static 'bootstrap-5.0.0-beta3-dist/css/bootstrap.min.css' %}">
+	<meta charset="UTF-8" />
+	<meta name="keywords" content="Effect Login Form Responsive Widget,Login form widgets, Sign up Web forms , Login signup Responsive web form,Flat Pricing table,Flat Drop downs,Registration Forms,News letter Forms,Elements"
+	/>
+	<script>
+		addEventListener("load", function () {
+			setTimeout(hideURLbar, 0);
+		}, false);
+
+		function hideURLbar() {
+			window.scrollTo(0, 1);
+		}
+	</script>
+	<!-- Meta tag Keywords -->
+	<!-- css2 files -->
+	<link rel="stylesheet" href="{% static 'css2/style.css' %}" type="text/css" media="all" />
+	<!-- Style-CSS -->
+	<link rel="stylesheet" href="{% static 'css2/fontawesome-all.css' %}">
+	<!-- Font-Awesome-Icons-CSS -->
+	<!-- //css2 files -->
+	<!-- web-fonts -->
+	<link href="https://fonts.googleapis.com/css?family=Josefin+Sans:100,100i,300,300i,400,400i,600,600i,700,700i" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i,800,800i" rel="stylesheet">
+	<!-- //web-fonts -->
+</head>
+
+<body>
+	<!-- bg effect -->
+	<div id="bg">
+		<canvas></canvas>
+		<canvas></canvas>
+		<canvas></canvas>
+	</div>
+	<!-- //bg effect -->
+	<!-- title -->
+	<h1>电动车头盔检测系统</h1>
+	<!-- //title -->
+	<!-- content -->
+	<div class="sub-main-w3">
+		<form action="/register_user" method="post">
+			<h2>立即 注册
+				<i class="fas fa-level-down-alt"></i>
+			</h2>
+
+			<div class="form-style-agile">
+				<label>
+					<i class="fas fa-user"></i>
+					用户名
+				</label>
+				<input placeholder="请输入...." name="username" type="text" required="">
+                                                <td>
+<font color="red">{{ errorInfo }}</font>
+</td>
+			</div>
+			<div class="form-style-agile">
+				<label>
+					<i class="fas fa-unlock-alt"></i>
+					密码
+				</label>
+				<input placeholder="请输入...." name="password" type="password" required="">
+			</div>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <!-- 用户类型下拉框 -->
+                  <div>
+
+                    <select class="form-select custom-select" name="type" required style="width: 150px;">
+                      <option value="user">普通用户</option>
+                      <option value="admin">管理员</option>
+                    </select>
+                  </div>
+
+                  <!-- 两个按钮 -->
+                  <div>
+                    <input type="submit" value="注 册" style="
+                      width: 90px;
+                      height: 50px;
+                      margin: 0;
+                    ">
+                    <a class="btn btn-primary" href="/tologin/" style="
+                      width: 90px;
+                      height: 50px;
+                      margin-left: 10px;
+                      position: relative;
+                      display: inline-block;
+                      text-decoration: none;
+                    ">
+                      <span style="
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%); /* 完全居中 */
+                        white-space: nowrap;              /* 防止空格换行 */
+                      ">返&nbsp;&nbsp;回</span>
+                    </a>
+                </div>
+			<!-- //checkbox -->
+
+		</form>
+	</div>
+	<!-- //content -->
+
+	<!-- copyright -->
+
+	<!-- //copyright -->
+
+	<!-- Jquery -->
+	<script src="{% static 'js2/jquery-3.3.1.min.js' %}"></script>
+	<!-- //Jquery -->
+
+	<!-- effect js2 -->
+	<script src="{% static 'js2/canva_moving_effect.js' %}"></script>
+	<!-- //effect js2 -->
+
+</body>
+
+</html>
