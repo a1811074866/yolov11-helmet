@@ -1,0 +1,130 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="{% static 'bootstrap-5.0.0-beta3-dist/css/bootstrap.min.css' %}">
+    <style>
+         body{
+		background: url("media/back/hemlet3.jpg") no-repeat center center fixed;
+                /*兼容浏览器版本*/
+                -webkit-background-size: cover;
+                -o-background-size: cover;
+                background-size: cover;
+	}
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+<div class="container">
+<a class="navbar-brand" href="/index/">主页</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="navbarSupportedContent">
+<ul class="navbar-nav me-auto mb-2 mb-lg-0">
+  <li class="nav-item">
+    <a class="nav-link active" aria-current="page" href="/record_list/">记录中心</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="#"></a>
+  </li>
+  <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+      消息通知
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+      <li><a class="dropdown-item" href="#">我的回复</a></li>
+      <li><a class="dropdown-item" href="#">系统通知</a></li>
+      <li><hr class="dropdown-divider"></li>
+      <li><a class="dropdown-item" href="#">@我的</a></li>
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link activate" href="/tologin/" tabindex="-1" aria-disabled="true">退出</a>
+  </li>
+</ul>
+</div>
+</div>
+</nav>
+    <script src="{% static 'jquery-3.5.1.min.js' %}"></script>
+    <script src="{% static 'bootstrap-5.0.0-beta3-dist/js/bootstrap.min.js' %}"></script>
+<div class="container" >
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+
+    <div class="image-container">
+
+        <div class="highlight-border">
+            <p style="margin: 0 auto; width: 50%; text-align: center;">图片检测</p>
+            <img width="320" height="280" src="{{ video_url1 }}" />
+        </div>
+        <div class="highlight-border">
+            <p style="margin: 0 auto; width: 50%; text-align: center;">检测结果显示</p>
+            <img width="320" height="280" src="{{ video_url4 }}" />
+        </div>
+    </div>
+
+    <style>
+    .highlight-border {
+        border: 10px solid #0a58ca;    /* 淡蓝色边框 */
+        border-radius: 10px;
+        padding: 0px;                 /* 边框与图片的间距 */
+        display: inline-block;        /* 保持包裹性 */
+        margin: 5px;
+    }
+
+        input[type="submit"] {
+        background-color: #6610f2;
+        color: white;
+        border: none;
+        padding: 20px;              /* 增大内边距 */
+        border-radius: 50%;          /* 圆形 */
+        width: 100px;                /* 固定宽度 */
+        height: 100px;               /* 固定高度 */
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+
+
+    input[type="submit"]:hover {
+        background-color: #0b9db8;
+    }
+    </style>
+
+<form action="/upload" enctype="multipart/form-data" method="post" id="uploadForm" style="margin-left: 120px; margin-top: 70px;">
+    {% csrf_token %}
+    <input type="file" name="myfile" id="fileInput" class="btn-success">
+    <input type="submit" value="上传文件" class="btn-success">
+</form>
+<!-- 第二个表单：携带隐藏字段 -->
+<form action="/detect" method="post" id="detectForm" style="margin-left: 0px; margin-top: 100px;">
+    {% csrf_token %}
+    <input type="hidden" name="filename" id="hiddenFilename" >
+    <input type="submit" value="处理文件" class="btn-primary">
+</form>
+<script>
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    // 获取上传的文件名
+    const fileName = document.getElementById('fileInput').files[0]?.name;
+
+    // 将文件名存入隐藏字段
+    if (fileName) {
+        document.getElementById('hiddenFilename').value = fileName;
+
+        // 可选：自动提交检测表单
+        setTimeout(() => {
+            document.getElementById('detectForm').submit();
+        }, 1000);
+    }
+});
+</script>
+</div>
+</body>
+</html>

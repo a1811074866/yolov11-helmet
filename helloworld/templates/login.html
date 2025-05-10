@@ -1,0 +1,58 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="{% static 'bootstrap-5.0.0-beta3-dist/css/bootstrap.min.css' %}">
+    <style  type="text/css">
+        body{
+		background: url("media/back/helmetb.jpg") no-repeat center center fixed;
+                /*兼容浏览器版本*/
+                -webkit-background-size: cover;
+                -o-background-size: cover;
+                background-size: cover;
+	}
+
+        .login-box{
+            width:400px;
+            height:280px;
+            margin-left: auto;
+            margin-right: 20px;
+            border: 10px solid #0dcaf0;
+            margin-top: 220px;
+            padding-left: 20px;
+            padding-right: 20px;
+            background-color: white;
+        }
+        .login-box h2{
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body >
+<div class="login-box">
+    <h2>登录界面</h2>
+    <form method="post" action="/login">
+            <div class="mb-3">
+        <label for="exampleInputEmail1" class="form-label">用户名</label>
+        <input type="text" class="form-control" name="user" aria-describedby="userhelp">
+            </div>
+        <div class="mb-3">
+        <label for="exampleInputPassword1" class="form-label">用户密码</label>
+        <input type="password" class="form-control" name="password">
+        </div>
+         {% csrf_token %}
+
+        <button type="submit" class="btn btn-primary"  style="margin-left: 120px; margin-top: 0px;">登录</button>
+        <a class="btn btn-primary" href="/register/">注册</a>
+        <span style="color: red;">{{ error }}</span>
+</form>
+
+
+</div>
+</body>
+</html>

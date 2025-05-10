@@ -1,0 +1,245 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>实时监测</title>
+    <link rel="stylesheet" href="{% static 'bootstrap-5.0.0-beta3-dist/css/bootstrap.min.css' %}">
+    <style>
+
+        body{
+		background: url("media/back/hemlet3.jpg") no-repeat center center fixed;
+                /*兼容浏览器版本*/
+                -webkit-background-size: cover;
+                -o-background-size: cover;
+                background-size: cover;
+	}
+                .button {
+            background-color: #4CAF50; /* Green */
+            border: none;
+            color: white;
+            padding: 16px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            -webkit-transition-duration: 0.4s; /* Safari */
+            transition-duration: 0.4s;
+            cursor: pointer;
+        }
+
+        .button1 {
+            background-color: white;
+            color: black;
+            border: 2px solid #4CAF50;
+        }
+
+        .button1:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .button2 {
+            background-color: white;
+            color: black;
+            border: 2px solid #008CBA;
+        }
+
+        .button2:hover {
+            background-color: #008CBA;
+            color: white;
+        }
+
+        #container { max-width: 1280px; margin: 20px auto; }
+        #videoFeed { border: 2px solid #4CAF50; border-radius: 5px; }
+        .upload-btn {
+            padding: 12px 24px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        #status { color: #666; margin-top: 10px; }
+
+            .button {
+        background-color: #4CAF50; /* Green */
+        border: none;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        -webkit-transition-duration: 0.4s; /* Safari */
+        transition-duration: 0.4s;
+    }
+    .button1 {
+    box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+    }
+
+.button2:hover {
+    box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
+}
+        videoFeed {
+      /* 基础样式 */
+      display: block;
+      background-color: #333;
+      background-image: url('media/back/back25.jpg');
+      background-size: cover;
+      background-position: center;
+
+      /* 响应式关键配置 */
+      width: 60%;
+      height: auto;  /* 高度根据宽高比自动计算 */
+      max-width: 660px;  /* 最大宽度限制 */
+      aspect-ratio: 16/9;  /* 假设视频比例16:9 */
+
+      /* 内容适配 */
+      object-fit: contain;  /* 保持视频完整显示 */
+      margin: 0 auto;  /* 水平居中 */
+    }
+
+
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+<div class="container">
+<a class="navbar-brand" href="/index/">主页</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="navbarSupportedContent">
+<ul class="navbar-nav me-auto mb-2 mb-lg-0">
+  <li class="nav-item">
+    <a class="nav-link active" aria-current="page" href="/record_list/">记录中心</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="#"></a>
+  </li>
+  <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+      消息通知
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+      <li><a class="dropdown-item" href="#">我的回复</a></li>
+      <li><a class="dropdown-item" href="#">系统通知</a></li>
+      <li><hr class="dropdown-divider"></li>
+      <li><a class="dropdown-item" href="#">@我的</a></li>
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link activate" href="/exit/" tabindex="-1" aria-disabled="true">退出</a>
+  </li>
+</ul>
+</div>
+</div>
+</nav>
+    <script src="{% static 'jquery-3.5.1.min.js' %}"></script>
+    <script src="{% static 'bootstrap-5.0.0-beta3-dist/js/bootstrap.min.js' %}"></script>
+    <div id="container">
+
+        <!-- 上传控件 -->
+        <input type="file" id="videoInput" accept="video/*" hidden>
+        <button class="button button2" onclick="document.getElementById('videoInput').click()">
+            上传视频
+        </button>
+        <div id="status">等待上传视频...</div>
+        <!-- 视频显示区域 -->
+{#        <img id="videoFeed" src="{% url 'video_stream' %}" width="1280" height="560" style="#}
+{#    background-color: #333;      /* 初始背景颜色 */#}
+{#    background-image: url('media/back/back25.jpg'); /* 占位图片（可选） */#}
+{#    background-size: cover;       /* 背景图填充 */#}
+{#    background-position: center;  /* 背景图居中 */#}
+{#  ">#}
+         <img id="videoFeed" src="{% url 'video_stream' %}" style="
+    background-color: #333;      /* 初始背景颜色 */
+    background-image: url('media/back/back25.jpg'); /* 占位图片（可选） */
+    background-size: cover;       /* 背景图填充 */
+    background-position: center;  /* 背景图居中 */
+  ">
+
+        <!-- 在视频下方添加控制栏 -->
+<!-- 在原有控制栏添加重置按钮 -->
+<div class="control-bar" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;">
+     <button onclick="pauseDetection()" class="button button2">暂停</button>
+    <button onclick="resumeDetection()" class="button button2">继续</button>
+    <button onclick="downloadResult()" class="button button2">下载结果</button>
+    <button onclick="terminateProcessing()" class="button button2">结束处理</button>
+</div>
+
+<!-- 添加重置状态提示 -->
+    <!-- 实时统计面板 -->
+
+<script>
+    // 控制API示例
+    function pauseDetection() {
+        fetch('/control/?action=pause').then(response => response.json())
+    .then(data => {
+      document.getElementById('status').textContent = `当前已暂停`;
+    });
+
+    }
+    function terminateProcessing() {
+        fetch('/terminate/?action=terminate').then(response => response.json())
+    .then(data => {
+      document.getElementById('status').textContent = `当前已结束视频`;
+    });
+    }
+    function resumeDetection() {
+        fetch('/control/?action=resume').then(response => response.json())
+    .then(data => {
+      document.getElementById('status').textContent = `实时检测中...`;
+    });
+    }
+
+    function downloadResult() {
+        window.open('/download/')
+    }
+
+</script>
+    </div>
+
+    <script>
+        const videoInput = document.getElementById('videoInput');
+        const statusDiv = document.getElementById('status');
+
+
+        videoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            statusDiv.textContent = '上传中...';
+            const formData = new FormData();
+            formData.append('video', file);
+
+            fetch('/upload_video/', {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    statusDiv.textContent = '实时检测中...';
+
+                }
+                else {
+                    statusDiv.textContent = '上传失败: ' + data.message;
+                }
+            }).catch(err => {
+                statusDiv.textContent = '网络错误: ' + err.message;
+            });
+        });
+
+        // 自动重连机制
+        setInterval(() => {
+            const img = document.getElementById('videoFeed');
+            img.src = img.src.split('?')[0] + '?t=' + Date.now();
+        }, 3000);
+    </script>
+</body>
+</html>
